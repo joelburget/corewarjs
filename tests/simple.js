@@ -5,15 +5,12 @@ var loadWarrior = function(path,cb) {
     fs.readFile("warriors/"+path,'utf-8',function(err,code) {
         if (err) return cb(err);
         
-        
-        
         cb(null,code);
         
     });
 };
 
-loadWarrior("fsh94/cds/zooom.red",function(err,code) {
-    
+loadWarrior("88/simplified/Imp.red",function(err,code) {
     
     console.log(code);
     
@@ -23,8 +20,9 @@ loadWarrior("fsh94/cds/zooom.red",function(err,code) {
     setTimeout(function() {
         
         var lines = redcode.getLines(code);
+        console.log("Compiled ",lines.length," lines");
         
-        console.log(lines);
+        redcode.run(code);
         
     },100);
     
