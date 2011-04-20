@@ -13,6 +13,10 @@ var currentIndent = 0;
 
 var labels = {};
 var equs = {};
+var indexes = {};
+
+//for local scoping inside loops
+var indexList = ["i"];
 
 var addIndent = function(code) {
     var ind="";
@@ -31,25 +35,29 @@ lex.block = [
     }],
     [/^END\s+(.*)/i,true,function(m) {
         var c = compile(lex.arg,m[1]);
-        if (c.length) return addIndent("\nstartingLine = "+c+";");
+        if (c.length) return addIndent("\nstartingLine = "+c+"+1;");
         return "";
     }],
     
     [/^ROF([^a-zA-z0-9_]+|\n|$)/i,true,function(m) {
         currentIndent--;
+        indexList.pop();
         return addIndent("\n}");
     }],
     
     [/^(([a-zA-Z0-9_]+)\:?\s+)?FOR\s+(.*)/i,true,function(m) {
         
         indexSequence++;
-        var indexName = " loop_"+indexSequence;
+        var indexName = "loopi_"+indexSequence;
         //if the index is named
         if (m[1]) {
-            indexName = m[2];
+            indexName = "loop_"+m[2];
+            indexes[m[2]]=indexName;
         }
+        indexList.push(indexName);
         
-        var ret = addIndent("\nfor (labels['"+indexName+"']=1;labels['"+indexName+"']<=("+compile(lex.arg,m[3])+");labels['"+indexName+"']++) {");
+        
+        var ret = addIndent("\nfor (var "+indexName+"=1;"+indexName+"<=("+compile(lex.arg,m[3])+");"+indexName+"++) {");
         currentIndent++;
         
         return ret;
@@ -100,11 +108,11 @@ lex.args = [
     }],
     // mode expr, mode expr
     [/^([\#\$\@\*\<\>\{\}]?)\s*([^\,]+?)\s*\,\s*([\#\$\@\*\<\>\{\}]?)\s*(.*)/,true,function(m) {
-        return "['"+(m[1]||'$')+"',function() { return "+compile(lex.arg,m[2])+";}],['"+(m[3]||'$')+"',function() { return "+compile(lex.arg,m[4])+";}]";
+        return "['"+(m[1]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[2])+"};})("+indexList.join(",")+")],['"+(m[3]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[4])+"};})("+indexList.join(",")+")]";
     }],
     // mode expr
     [/^([\#\$\@\*\<\>\{\}]?)\s*([^\,]+)\s*/,true,function(m) {
-        return "['"+(m[1]||'$')+"',function() { return "+compile(lex.arg,m[2])+";}],null";
+        return "['"+(m[1]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[2])+"};})("+indexList.join(",")+")],null";
     }],
     [/^.*/,true,function(m) {
            return "/* ARGS "+m[0]+" */";
@@ -119,13 +127,13 @@ lex.arg = [
         return m[0];
     }],
     [/^([a-zA-Z0-9_]+)/,true,function(m) {
-        /*
-        if (equs[m[0]]) {
-            return "equ['"+m[0]+"']()";
+        
+        if (indexes[m[0]]) {
+            return "loop_"+m[0];
         }
-        */
+        
         // label-i because all addresses are relative
-        return "(equ['"+m[0]+"']?equ['"+m[0]+"']():(labels['"+m[0]+"']-i))";
+        return "getLabel('"+m[0]+"',i)";
     }],
     [/^.*/,true,function(m) {
            return "/* ARG "+m[0]+" */";
@@ -173,73 +181,43 @@ var compile = function(lex,code) {
 };
 
 
-var parse = function(redcode) {
+var preparse = function(redcode,options) {
     
     var compiled=compile(lex.block,redcode);
 
-    labels["CORESIZE"]=8000;
+    if (options) {
+        labels["CORESIZE"]=options["CORESIZE"] || 8000;
+    }
 
-
-    compiled="var i=0,labels={},equ={},lines=[],startingLine=0;\n"+compiled;
+    compiled="var i=0,labels={},indexes={},equ={},lines=[],startingLine=0;"+
+    "\nvar getLabel=function(label,i) {"+
+    "\n  if (equ[label]) return equ[label]();"+
+    "\n  return labels[label]-i;"+
+    "\n}\n"+
+    compiled;
 
     return compiled;
 }
 
-var getLines = function(redcode) {
+var parse = function(redcode,options) {
     
-    eval(parse(redcode));
+    eval(preparse(redcode,options));
     
-    return lines;
-    
-}
-
-
-
-var run = function(redcode) {
-    
-    eval(parse(redcode));
-    
-    var address = function(mode,expr) {
-        if (mode=="$") {
-            return i+expr;
-        }
-    };
-    
-    var execOne = function(opcode,modifier,modea,expra,modeb,exprb) {
-
-        var a=expra(),b=exprb();
-        console.log(" ",opcode,a,b);
-        if (expra) {
-            a = address(modea,a);
-        }
-        if (exprb) {
-            b = address(modeb,b);
-        }
-        console.log(" ",opcode,a,b);
-        if (opcode=="MOV") {
-            lines[b] = lines[a];
-        }
-    };
-    
-    
-    
-    
-    
-    console.log("Running ",lines.length," instructions, start at",startingLine);
-    
-    i = address("$",startingLine);
-    
-    for (var iterations=0;iterations<100;iterations++) {
-        console.log("EXEC ",iterations,i);
-        execOne(lines[i][0][0].toUpperCase(),lines[i][0][1].toUpperCase(),lines[i][1][0],lines[i][1][1],lines[i][2]?lines[i][2][0]:null,lines[i][2]?lines[i][2][1]:null);
-        i++;
+    //After evaluating the preparsed code, we resolve the expressions
+    for (var i=0;i<lines.length;i++) {
+        lines[i] = [lines[i][0],[lines[i][1][0],lines[i][1][1](i)],lines[i][2]?[lines[i][2][0],lines[i][2][1](i)]:null];
     }
-    
+
+    return {
+        "lines":lines,
+        "start":startingLine
+    };
 }
 
 
-exports.getLines = getLines;
+
 exports.parse = parse;
-exports.run = run;
+exports.preparse = preparse;
+
 
 })();
