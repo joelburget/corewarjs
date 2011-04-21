@@ -1,4 +1,9 @@
 (function() {
+  
+  
+var core = require("./core.js");
+var MathParser = require("./mathparser.js").Parser;
+var _ = require("./underscore.js")._;
     
     
 // Function below
@@ -8,15 +13,24 @@ var compile;
 // regexp, final, callback
 var lex = {};
 
-var indexSequence = 0;
-var currentIndent = 0;
 
-var labels = {};
-var equs = {};
-var indexes = {};
 
-//for local scoping inside loops
-var indexList = ["i"];
+// Parser variables
+var indexSequence,currentIndent,labels,equs,indexes;
+var reset = function() {
+    
+    // Loop counter
+    indexSequence = 0;
+    
+    // Only for pretty formatting purposes
+    currentIndent = 0;
+    
+    labels = {};
+    equs = {};
+    indexes = {};
+}
+
+reset();
 
 var addIndent = function(code) {
     var ind="";
@@ -24,6 +38,35 @@ var addIndent = function(code) {
         ind+="  ";
     }
     return code.replace(/\n/g,"\n"+ind);
+}
+
+var expr = function(x) {
+    x=x.replace(/\s+/,"");
+    //console.log(x);
+    var p = MathParser.parse(x);
+    
+    var v = p.variables();
+    if (v.length==0) {
+        return MathParser.parse(x).evaluate();
+    }
+    
+    var varlist = ["CURLINE:i"];
+    for (var y=0;y<v.length;y++) {
+        var varName = v[y];
+        
+        if (varName=="CURLINE") break;
+        
+        var isIndex = !!indexes[varName];
+        
+        if (isIndex) {
+            varlist.push(varName+":indexes['loop_"+varName+"']");
+        } else {
+            p = p.substitute(varName,varName+"(CURLINE)");
+        }
+    };
+    
+    return "parsemath('"+p.toString()+"',{"+varlist.join(",")+"})";
+    
 }
 
 lex.block = [
@@ -34,14 +77,13 @@ lex.block = [
         return addIndent("\nstartingLine = "+compile(lex.arg,m[1])+";");
     }],
     [/^END\s+(.*)/i,true,function(m) {
-        var c = compile(lex.arg,m[1]);
-        if (c.length) return addIndent("\nstartingLine = "+c+"+1;");
+        m[1] = m[1].replace(/\s+/g,"");
+        //if (m[1].length) return addIndent("\nstartingLine = evmath("+expr(m[1])+",labels);");
         return "";
     }],
     
     [/^ROF([^a-zA-z0-9_]+|\n|$)/i,true,function(m) {
         currentIndent--;
-        indexList.pop();
         return addIndent("\n}");
     }],
     
@@ -54,10 +96,12 @@ lex.block = [
             indexName = "loop_"+m[2];
             indexes[m[2]]=indexName;
         }
-        indexList.push(indexName);
         
+        var count = expr(m[3]);
         
-        var ret = addIndent("\nfor (var "+indexName+"=1;"+indexName+"<=("+compile(lex.arg,m[3])+");"+indexName+"++) {");
+        if (parseInt(count)!==count) count="evmath("+count+",labels)";
+                
+        var ret = addIndent("\nfor (indexes['"+indexName+"']=1;indexes['"+indexName+"']<="+count+";indexes['"+indexName+"']++) {");
         currentIndent++;
         
         return ret;
@@ -74,11 +118,11 @@ lex.block = [
         if (cnt.match(/^\s*(DAT|MOV|ADD|SUB|MUL|DIV|MOD|JMP|JMZ|JMN|DJN|CMP|SLT|SPL|ORG|END)(\.(A|B|AB|BA|F|X|I))?\s+(.*)/i)) {
             
             currentIndent++;
-            var ret = "\nequ['"+m[1]+"'] = function() { "+compile(lex.block,cnt)+"\n}";
+            var ret = "\nlabels['"+m[1]+"'] = function() { "+compile(lex.block,cnt)+"\n}";
             currentIndent--;
 
         } else {
-            var ret = "\nequ['"+m[1]+"'] = function() { return "+compile(lex.arg,cnt)+";}";
+            var ret = "\nlabels['"+m[1]+"'] = function() { return evmath("+expr(cnt)+",labels);}";
             
         }
         
@@ -87,14 +131,14 @@ lex.block = [
     }],
     
     [/^(DAT|MOV|ADD|SUB|MUL|DIV|MOD|JMP|JMZ|JMN|DJN|CMP|SLT|SPL|ORG|END)(\.(A|B|AB|BA|F|X|I))?\s+(.*)/i,true,function(m) {
-        return addIndent("\nlines[i]=[['"+m[1]+"','"+(m[3]||'F')+"'],"+compile(lex.args,m[4])+"]; i++;");
+        return addIndent("\nlines[i]=[['"+m[1]+"','"+(m[3]||'')+"'],"+compile(lex.args,m[4])+"]; i++;");
         
     }],
     [/^([a-zA-Z0-9_]+)\:?/,true,function(m) {
         if (equs[m[1]]) {
-            return addIndent("\nequ['"+m[1]+"']();");
+            return addIndent("\nlabels['"+m[1]+"']();");
         }
-        return "\nlabels['"+m[1]+"'] = i;";
+        return addIndent("\nlabels['"+m[1]+"'] = (function(line) {return function(y) {return line-y;};})(i);");
     }],
     [/^.*/,true,function(m) {
         return addIndent("// "+m[0]);
@@ -108,11 +152,11 @@ lex.args = [
     }],
     // mode expr, mode expr
     [/^([\#\$\@\*\<\>\{\}]?)\s*([^\,]+?)\s*\,\s*([\#\$\@\*\<\>\{\}]?)\s*(.*)/,true,function(m) {
-        return "['"+(m[1]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[2])+"};})("+indexList.join(",")+")],['"+(m[3]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[4])+"};})("+indexList.join(",")+")]";
+        return "['"+(m[1]||'$')+"',"+expr(m[2])+"],['"+(m[3]||'$')+"',"+expr(m[4])+"]";
     }],
     // mode expr
     [/^([\#\$\@\*\<\>\{\}]?)\s*([^\,]+)\s*/,true,function(m) {
-        return "['"+(m[1]||'$')+"',(function("+indexList.join(",")+") { return function() { return "+compile(lex.arg,m[2])+"};})("+indexList.join(",")+")],null";
+        return "['"+(m[1]||'$')+"',"+expr(m[2])+"],null";
     }],
     [/^.*/,true,function(m) {
            return "/* ARGS "+m[0]+" */";
@@ -133,7 +177,8 @@ lex.arg = [
         }
         
         // label-i because all addresses are relative
-        return "getLabel('"+m[0]+"',i)";
+        //return "getLabel('"+m[0]+"',i)";
+        return m[0];
     }],
     [/^.*/,true,function(m) {
            return "/* ARG "+m[0]+" */";
@@ -180,35 +225,86 @@ var compile = function(lex,code) {
     
 };
 
+var evmath = function(expr,vars) {
+    expr=expr+"";
+    var p = MathParser.parse(expr);
+    return p.evaluate(vars);
+}
+
+var parsemath = function(expr,vars) {
+    if (parseInt(expr)===expr) return expr;
+    
+    var p = MathParser.parse(expr);
+
+    if (vars) {
+       return p.simplify(vars).toString();
+    } else {
+       return p.evaluate(); 
+    }
+    
+};
 
 var preparse = function(redcode,options) {
     
+    if (!options) options = {};
+    
+    options["CORESIZE"]=options["CORESIZE"] || 8000;
+    options["MAXLENGTH"]=options["MAXLENGTH"] || 100;
+    
+    // Prepend constants to the code
+    redcode=_.map(options,function(v,k) { return k+" EQU "+v;}).join("\n")+"\n"+redcode;
+    
     var compiled=compile(lex.block,redcode);
+    
 
-    if (options) {
-        labels["CORESIZE"]=options["CORESIZE"] || 8000;
-    }
-
-    compiled="var i=0,labels={},indexes={},equ={},lines=[],startingLine=0;"+
-    "\nvar getLabel=function(label,i) {"+
-    "\n  if (equ[label]) return equ[label]();"+
-    "\n  return labels[label]-i;"+
-    "\n}\n"+
-    compiled;
+    compiled="var i=0,labels={},indexes={},lines=[],startingLine=0;"+compiled;
 
     return compiled;
 }
 
 var parse = function(redcode,options) {
     
+    reset();
+    
+    //var evmath = function(x) {return x;}
+    
     eval(preparse(redcode,options));
+    
+    var instructions = [];
+    
+    
+    
     
     //After evaluating the preparsed code, we resolve the expressions
     for (var i=0;i<lines.length;i++) {
-        lines[i] = [lines[i][0],[lines[i][1][0],lines[i][1][1](i)],lines[i][2]?[lines[i][2][0],lines[i][2][1](i)]:null];
+
+        //console.log(lines[i][1][1],labels,evmath(lines[i][1][1],labels),labels.qd(6),labels.qf(6),labels.qs(6));
+        //if (i>5) break;
+
+        var line = lines[i];
+        var cmd = lines[i][0][0].toUpperCase();
+        var mod = lines[i][0][1].toUpperCase();
+        var op_a = lines[i][1][0];
+        var value_a = evmath(lines[i][1][1],labels);
+        var op_b = lines[i][2]?lines[i][2][0]:"#"; //DEFAULT = # 0 for mono-instructions?
+        var value_b = lines[i][2]?evmath(lines[i][2][1],labels):0;
+        
+        //DAT when with single values place it in the B register
+        if (cmd=="DAT" && !lines[i][2]) {
+            op_b = op_a;
+            value_b = value_a;
+            op_a = "#";
+            value_a = 0;
+        }
+        
+        
+        lines[i] = [[cmd,mod] , [op_a,value_a], [op_b,value_b]];
+        
+        instructions[i] = [core[cmd] + (mod===''?0:core[mod]),[core.OP_LOOKUP[op_a], value_a],[core.OP_LOOKUP[op_b], value_b]];
     }
 
     return {
+        "instructions":instructions,
         "lines":lines,
         "start":startingLine
     };

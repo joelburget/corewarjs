@@ -1,11 +1,20 @@
-This project aims to write a client/server CoreWar runner in Javascript.
+This project aims to write a client/server CoreWar runner in 100% Javascript.
 
 See http://www.corewar.info/
 
-TODO:
- - parse pMARS recode into list of simple instructions (80%)
- - setup the actual VM (0%)
- - create a nice browser GUI for showing battles (0%)
-
 How to test:
- - node test/simple.js
+ - node tests/parser.js : test parsing on one warrior (edit file to change it)
+ - node tests/88all.js : run unitest comparing both versions in warriors/88/ 
+ - node tests/battle.js : run a battle between 2 imps (and soon more!)
+
+TODO:
+ - fix last few bugs in the parser
+ - create a nice browser GUI for showing battles
+
+Credits:
+ - Underscore.js
+ - Math Parser : http://silentmatt.com/javascript-expression-evaluator/
+ - Core/Warrior code forked from https://github.com/termie/corewarjs
+
+License:
+ - GPLv2
