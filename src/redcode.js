@@ -74,11 +74,11 @@ lex.block = [
         return "";
     }],
     [/^ORG\s+(.*)/i,true,function(m) {
-        return addIndent("\nstartingLine = "+compile(lex.arg,m[1])+";");
+        return addIndent("\nstartingLine = "+expr(m[1])+";");
     }],
     [/^END\s+(.*)/i,true,function(m) {
         m[1] = m[1].replace(/\s+/g,"");
-        //if (m[1].length) return addIndent("\nstartingLine = evmath("+expr(m[1])+",labels);");
+        if (m[1].length) return addIndent("\ni=0;startingLine = evmath("+expr(m[1])+",labels);");
         return "";
     }],
     
@@ -163,27 +163,6 @@ lex.args = [
     }],
 ];
 
-lex.arg = [
-    [/^\s+/,true,function(m) {
-        return "";
-    }],
-    [/^[\(\)\+\-\=\!\&\|\<\>\*\/\%0-9]+/,true,function(m) {
-        return m[0];
-    }],
-    [/^([a-zA-Z0-9_]+)/,true,function(m) {
-        
-        if (indexes[m[0]]) {
-            return "loop_"+m[0];
-        }
-        
-        // label-i because all addresses are relative
-        //return "getLabel('"+m[0]+"',i)";
-        return m[0];
-    }],
-    [/^.*/,true,function(m) {
-           return "/* ARG "+m[0]+" */";
-    }],
-];
 
 
 var compile = function(lex,code) {
@@ -225,6 +204,7 @@ var compile = function(lex,code) {
     
 };
 
+
 var evmath = function(expr,vars) {
     expr=expr+"";
     var p = MathParser.parse(expr);
@@ -244,6 +224,8 @@ var parsemath = function(expr,vars) {
     
 };
 
+
+// redcode => javascript
 var preparse = function(redcode,options) {
     
     if (!options) options = {};
@@ -262,6 +244,7 @@ var preparse = function(redcode,options) {
     return compiled;
 }
 
+// redcode => array of lines
 var parse = function(redcode,options) {
     
     reset();
@@ -306,7 +289,7 @@ var parse = function(redcode,options) {
     return {
         "instructions":instructions,
         "lines":lines,
-        "start":startingLine
+        "start":evmath(startingLine,labels)
     };
 }
 

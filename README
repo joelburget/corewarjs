@@ -9,7 +9,11 @@ How to test:
 
 TODO / How to help:
  - fix last few bugs in the parser
+ - compare starting points in 88all
+ - document
+ - clean the code a bit
  - create a nice browser GUI for showing battles
+ - create a hill
 
 Credits:
  - Underscore.js
