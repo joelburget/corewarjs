@@ -7,7 +7,7 @@ How to test:
  - node tests/88all.js : run unitest comparing both versions in warriors/88/ 
  - node tests/battle.js : run a battle between 2 imps (and soon more!)
 
-TODO:
+TODO / How to help:
  - fix last few bugs in the parser
  - create a nice browser GUI for showing battles
 
@@ -18,3 +18,13 @@ Credits:
 
 License:
  - GPLv2
+
+
+How does the parser work:
+
+This will be documented soon with some slides hopefully that I'll try to present maybe at NodeCamp.eu 2011
+
+Basically, the parser does this :
+ - redcode.preparse(redcode) => javascript
+ - eval(javascript) => array of lines like [["MOV",I],["#",0],["$",42]]
+ - then the Core/Warrior combo executes them
