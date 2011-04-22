@@ -2,17 +2,21 @@ This project aims to write a client/server CoreWar runner in 100% Javascript.
 
 See http://www.corewar.info/
 
-How to test:
+How to test on the server side:
  - node tests/parser.js : test parsing on one warrior (edit file to change it)
  - node tests/88all.js : run unitest comparing both versions in warriors/88/ 
  - node tests/battle.js : run a battle between 2 imps (and soon more!)
+
+How to run the backend/frontend:
+ - npm install  expressjs request test
+ - node backend/app.js => frontend should be up at http://localhost:40008
 
 TODO / How to help:
  - fix last few bugs in the parser
  - compare starting points in 88all
  - document
  - clean the code a bit
- - create a nice browser GUI for showing battles
+ - create a nice browser GUI for showing battles (we already have pluggable viewers ! :-)
  - create a hill
  - create a ACE highlighter for redcode (https://github.com/ajaxorg/ace/tree/master/lib/ace/mode)
 
@@ -20,6 +24,7 @@ Credits:
  - Underscore.js
  - Math Parser : http://silentmatt.com/javascript-expression-evaluator/
  - Core/Warrior code forked from https://github.com/termie/corewarjs
+ - Frontend code forked from https://github.com/jeromeetienne/arenajs/tree/master/www/dashboard 
 
 License:
  - GPLv2

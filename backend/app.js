@@ -10,10 +10,7 @@ var express = require('express'),
     fs = require('fs'),
     
     request = require('request'),
-    mkdirp  = require('mkdirp').mkdirp,
     
-    spawn = require('child_process').spawn;
-
 var app = module.exports = express.createServer();
 
 
