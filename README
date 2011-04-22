@@ -13,12 +13,15 @@ How to run the backend/frontend:
 
 TODO / How to help:
  - fix last few bugs in the parser
+  - fix literal replacement of EQUs
+ - use a proper JS loader and reduce the number of global variables when in browser mode.
  - compare starting points in 88all
  - document
  - clean the code a bit
  - create a nice browser GUI for showing battles (we already have pluggable viewers ! :-)
  - create a hill
  - create a ACE highlighter for redcode (https://github.com/ajaxorg/ace/tree/master/lib/ace/mode)
+ - profile and optimize!
 
 Credits:
  - Underscore.js
