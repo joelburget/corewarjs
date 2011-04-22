@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+  <title>Console viewer</title>
+  <style>
+    body {
+      background-color: #222;
+	  color:#EEE;
+	  font-family:monospace;
+    }
+
+  </style>
+</head>
+<body id="log">
+
+<script type="text/javascript">
+
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Viewer ctor/dtor						//
+	//////////////////////////////////////////////////////////////////////////////////
+
+	var Viewer	= function(){
+		this.windowMessageCtor();
+
+	}
+
+	Viewer.prototype.destroy	= function(){
+		if( this.battle ){
+			this.battle.destroy();
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		windowMessage							//
+	//////////////////////////////////////////////////////////////////////////////////
+
+	Viewer.prototype.windowMessageCtor	= function(){
+		window.addEventListener("message", function(event){
+			// keep message IIF in a iframe
+			if( window.parent === window )		return;
+			// keep only message from the parent window
+			if( event.source !== window.parent)	return;
+			// parse the event
+			var eventFull	= JSON.parse(event.data);
+			var eventType	= eventFull.type;
+			var eventData	= eventFull.data;
+			var userdata	= eventFull.userdata;
+			//console.log("eventFull", eventFull);
+			//console.log("window message", event.data, event.origin);
+			var methodName	= "on" + eventType.substr(0,1).toUpperCase() + eventType.substr(1);
+			if( methodName in this ){
+				try {
+					var ret	= this[methodName](eventData);
+					window.parent.postMessage(JSON.stringify({
+						status	: "succeed",
+						userdata: userdata,
+						data	: ret
+					}), "*");
+				}catch(e){
+					window.parent.postMessage(JSON.stringify({
+						status	: "error",
+						userdata: userdata,
+						message	: e.toString()
+					}), "*");				
+				}
+			}else{
+				//console.log("event ", eventType, "is unknown")
+			}
+		}.bind(this), false);
+	}
+
+	Viewer.prototype.windowMessageSend	= function(event, callback){
+		var destWindow	= window.parent;
+		console.log("viewer.windowMessageSend", event)
+		// if a callback is present, install it now
+		if( callback ){
+			event.userdata	= event.userdata	|| {}
+			event.userdata.callback	= "windowParent-"+Math.floor(Math.random()*99999).toString(36);
+			window[event.userdata.callback]	= function(data){
+				callback(data)
+			};
+		}
+		// post the message
+		destWindow.postMessage(JSON.stringify(event), "*");	
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//										//
+	//////////////////////////////////////////////////////////////////////////////////
+
+
+	
+    var pad = function pad(number, length) {
+      var str = '' + number;
+      while (str.length < length) {
+        str = '0' + str;
+      }
+      return str;
+    };
+
+
+	Viewer.prototype.onCoreExec	= function(data){
+		
+		var line = pad(data.cycle, 5) +
+                    ' (warrior ' + data.warrior + ':' + pad(data.position, 5) + ')-&gt; '
+                    + data.instructionDump.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+		document.getElementById("log").innerHTML=line+"<br/>"+document.getElementById("log").innerHTML;	
+		return true;
+	}
+
+	Viewer.prototype.onGameStart	= function(){
+		document.getElementById("log").innerHTML="";
+		return true;
+	}
+	
+	
+	var viewer	= new Viewer();
+
+
+</script>
+</body>
+</html>

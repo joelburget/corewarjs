@@ -14,6 +14,7 @@ TODO / How to help:
  - clean the code a bit
  - create a nice browser GUI for showing battles
  - create a hill
+ - create a ACE highlighter for redcode (https://github.com/ajaxorg/ace/tree/master/lib/ace/mode)
 
 Credits:
  - Underscore.js
