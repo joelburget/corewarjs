@@ -9,7 +9,7 @@ var express = require('express'),
     path = require('path'),
     fs = require('fs'),
     
-    request = require('request'),
+    request = require('request');
     
 var app = module.exports = express.createServer();
 
@@ -59,4 +59,4 @@ app.get('/jsonpify', function(req, res){
 });
 
 // Only listen on $ node app.js
-if (!module.parent) app.listen(40008);
+if (!module.parent) app.listen(process.env.PORT || 40008);
