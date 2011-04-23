@@ -58,5 +58,10 @@ app.get('/jsonpify', function(req, res){
     
 });
 
+
+
 // Only listen on $ node app.js
-if (!module.parent) app.listen(process.env.PORT || 40008);
+if (!module.parent) {
+    console.log("Server starting on port ",process.env.PORT || 40008);
+    app.listen(process.env.PORT || 40008);
+}

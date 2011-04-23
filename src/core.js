@@ -85,6 +85,40 @@ var CMD = 0;
 var VALUE = 1;
 
 
+
+var dump = function (inst) {
+  var out = [];
+  for (var c in CMD_REVERSE) {
+    if (inst[CMD] & CMD_REVERSE[c]) {
+      out.push(c);
+    }
+  }
+  var mod = false;
+  for (var d in MOD_REVERSE) {
+    if (inst[CMD] & MOD_REVERSE[d]) {
+      out.push(d);
+      mod = true;
+    }
+  }
+  if (!mod) out.push('_');
+
+  for (var e in OP_LOOKUP) {
+    if (inst[A][OP] & OP_LOOKUP[e]) {
+      out.push(e);
+      out.push(inst[A][VALUE]);
+    }
+  }
+  for (var f in OP_LOOKUP) {
+    if (inst[B][OP] & OP_LOOKUP[f]) {
+      out.push(f);
+      out.push(inst[B][VALUE]);
+    }
+  }
+  
+  return out[0] + (out[1]!="_"?('.' + out[1]):"") + ' ' + out[2] + out[3] + ((out[5]+"")?(', ' + out[4] + out[5]):"");
+}
+
+
 var Core;
 
 
@@ -119,38 +153,6 @@ var Core;
 
 
 
-
-    var dump = function (inst) {
-      var out = [];
-      for (var c in CMD_REVERSE) {
-        if (inst[CMD] & CMD_REVERSE[c]) {
-          out.push(c);
-        }
-      }
-      var mod = false;
-      for (var d in MOD_REVERSE) {
-        if (inst[CMD] & MOD_REVERSE[d]) {
-          out.push(d);
-          mod = true;
-        }
-      }
-      if (!mod) out.push('_');
-  
-      for (var e in OP_LOOKUP) {
-        if (inst[A][OP] & OP_LOOKUP[e]) {
-          out.push(e);
-          out.push(inst[A][VALUE]);
-        }
-      }
-      for (var f in OP_LOOKUP) {
-        if (inst[B][OP] & OP_LOOKUP[f]) {
-          out.push(f);
-          out.push(inst[B][VALUE]);
-        }
-      }
-
-      return out[0] + '.' + out[1] + ' ' + out[2] + out[3] + ' ' + out[4] + out[5];
-    }
 
 
     var pad = function pad(number, length) {
@@ -564,6 +566,8 @@ var Core;
         exports.OP = OP;
         exports.CMD = CMD;
         exports.VALUE = VALUE;
+        
+        exports.dump = dump;
 
     }
 

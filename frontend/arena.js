@@ -1,57 +1,128 @@
-//////////////////////////////////////////////////////////////////////////////////
-//		Viewer ctor/dtor						//
-//////////////////////////////////////////////////////////////////////////////////
 
-var Dashboard	= function(){
-	this.editorCtor();
-	this.viewerCtor();
-	this.scriptsListUiCtor();
-}
+var Dashboard = function(){
+    var self = this;
+    
+    this.scripts = [];
+    
+	// build editor & bind controls
+	jQuery('.editorContainer').each(function(i,cnt) {
+	    
+	    var scriptId=cnt.id.replace("warrior_","");
+	    
+	    self.scripts.push(scriptId);
+	    
+	    self.editorLoad(scriptId);
+	    
+	    /*
+	    var acewidget = jQuery(".editor",cnt).acewidget({
+    		width		: "350px",
+    		height		: "600px",
+    		mode        : "text"
+    	});
+	    acewidget.bind("load", function(){
+    		acewidget.setTabSize(4, function(result){
+    			console.log("setTabSize", result.status)
+    		});
+    	});
+    	*/
+    	
+    	// "Change..." button
+    	jQuery('input.reload',cnt).click(function(){
+    	    self.editorLoad(scriptId);
+	    });
 
-Dashboard.prototype.destroy	= function(){
-	this.scriptsListUiDtor();
-	this.viewerDtor();
-	this.editorDtor();
-}
+    	// "precompile..." button
+    	jQuery('input.translate',cnt).click(function(){
+    	    self.editorLoad(scriptId,function() {
+        	    self.editorGetValue(scriptId,function(err,code) {
+        	        self.editorSetValue(scriptId,preparse(code));
+        	    });
+	        });
+	    });
+  	
+    	// "compile..." button
+    	jQuery('input.compile',cnt).click(function(){
+    	    self.editorLoad(scriptId,function() {
+        	    self.editorGetValue(scriptId,function(err,code) {
+        	        var parsed = parse(code);
+        	        self.editorSetValue(scriptId,parsed.cleanSource);
+        	    });
+	        });
+	    });
+	    
+    	// "reload" button
+    	jQuery('input.change',cnt).click(function(){
 
+            jQuery('#botswitcher input#changebotid').val(scriptId);
+    		jQuery('#botswitcher').show();
 
-//////////////////////////////////////////////////////////////////////////////////
-//		acewidget stuff							//
-//////////////////////////////////////////////////////////////////////////////////
-
-Dashboard.prototype.editorCtor	= function()
-{
-	// build editor
-	this.acewidget	= jQuery('#editor').acewidget({
-		width		: "450px",
-		height		: "400px",
-		mode        : "text"
+    	});
+    	
 	});
-	// setTabSize to 8
-	this.acewidget.bind("load", function(){
-		this.acewidget.setTabSize(8, function(result){
-			console.log("setTabSize", result.status)
-		});
-	}.bind(this));
-	// bind the clear button
-	jQuery('#editorContainer .menu input[value=clear]').click(function(){
-		jQuery("#editorContainer .menu .value").text("none")
-		this.acewidget.setValue("", function(result){
-			console.log("setValue", result.status)
-		});		
-	}.bind(this));
-}
+	
+	
+	// Switcher: "Load!" button
+	jQuery('#botswitcher input.load').click(function() {
+	    var scriptId=jQuery('#botswitcher input#changebotid').val();
 
-Dashboard.prototype.editorDtor	= function()
-{
+	    var url = jQuery('#botswitcher input#changeboturl').val();
+	    var library = jQuery('#botswitcher select#changebotlibrary').val();
+        
+        if (library) {
+            url=library;
+        }
+        
+        if (url) {
+            jQuery(".editorContainer#warrior_"+scriptId+" .scriptUrl").text(url);
+            self.editorLoad(scriptId);
+        }
+        
+	    
+	    
+	    jQuery('#botswitcher').hide();
+	    
+	});
+	
+	//Load library
+	jQuery.get('/warriors/list.txt',function(list) {
+	    jQuery('#botswitcher select#changebotlibrary')[0].innerHTML = "<option value=''>Choose...</option>"+_.map(list.split("\n"),function(w) {
+	        return "<option value='"+w+"'>"+w+"</option>";
+	    }).join("");
+	});
+	
+	this.viewerCtor();
 }
 
 Dashboard.prototype.editorSetValue	= function(scriptId, scriptData){
+    /*
 	jQuery("#editorContainer .menu .value").text(scriptId)
 	this.acewidget.setValue(scriptData, function(result){
 		console.log("setValue", result.status)
-	});
+	});*/
+	
+	jQuery(".editorContainer#warrior_"+scriptId+" textarea").val(scriptData);
+	
 }
+
+Dashboard.prototype.editorGetValue	= function(scriptId,callback){
+	
+	callback(null,jQuery(".editorContainer#warrior_"+scriptId+" textarea").val());
+	
+}
+
+Dashboard.prototype.editorLoad = function(scriptId,callback) {
+    var self=this;
+    self.editorSetValue(scriptId,"loading...");
+    loadCode(jQuery(".editorContainer#warrior_"+scriptId+" .scriptUrl").text(),function(err,code) {
+        self.editorSetValue(scriptId,code);
+        if (callback) callback();
+    })
+    
+}
+
+Dashboard.prototype.setGameStatus = function(status) {
+    jQuery("#gamestatus").text(status);
+} 
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -79,14 +150,20 @@ Dashboard.prototype.viewerReset	= function()
 		jQuery('<iframe>').attr({
 			id	: "viewerIframe",
 			src	: 'viewers/console/index.html',
-			width	: '450px',
-			height	: '400px'
+			width	: jQuery("#viewer").width(),
+			height	: jQuery("#tableContainer").height()
 		})
 	);
 }
 
 Dashboard.prototype.viewerCall	= function(event, callback){
 	var destWindow	= document.getElementById("viewerIframe").contentWindow;
+	
+	//Need to optimize this, we send 160k events in a second
+	
+	var method = destWindow.viewer.receiveEvent(event.type,event.data);
+	
+	/*
 	// if a callback is present, install it now
 	if( callback ){
 		event.userdata	= event.userdata	|| {}
@@ -97,47 +174,27 @@ Dashboard.prototype.viewerCall	= function(event, callback){
 	}
 	// post the message
 	destWindow.postMessage(JSON.stringify(event), "*");
+	*/
 }
 
 Dashboard.prototype.viewerStart	= function(){
-	var scripts	= this.scriptsListCollect();
-	var editScriptId= jQuery("#editorContainer .menu .value").text()
-	// load all scriptsData from their scriptUrl
-	var scriptsData	= {}
-	jQuery.each(scripts, function(scriptId, scriptUrl){
-		var loaded	= function(scriptId, scriptData){
-			scriptsData[scriptId]	= scriptData;
-			if( Object.keys(scriptsData).length == Object.keys(scripts).length ){
-				allLoaded()
-			}			
-		}
-		if( scriptId === editScriptId ){
-			this.acewidget.getValue(function(result){
-				console.log("getValue", scriptData)
-				var scriptData	= result.data.data;
-				loaded(scriptId, scriptData);
-			});
-		}else{
-			loadCode(scriptUrl, function(err,scriptData){
-				loaded(scriptId, scriptData);
-			}.bind(this), 'html');		
-		}
-	}.bind(this));
 
+    var self = this;
+    var scriptsData = {};
     var warriors = [];
-
+    
+    
 	// actually start the game
 	var allLoaded	= function(){
-	    var self = this;
-	    console.log("all warriors loaded");
+	    
+	    self.setGameStatus("Parsing...");
 	    
 	    jQuery.each(scriptsData, function(scriptId, code){
 	        
 	        warriors.push(new Warrior(scriptId,null,code));
 	    });
 	    
-	    console.log("all warriors parsed");
-		
+		self.setGameStatus("Starting...");
 		
 		setTimeout(function() {
 		    
@@ -148,12 +205,21 @@ Dashboard.prototype.viewerStart	= function(){
             
             var running = true;
             
+            
+            
             _.each(["change","exec","victory","defeat","stalemate"],function(evtName) {
                 
                 core.subscribe(evtName,function(data) {
                     
-                    if (evtName=="victory" || evtName=="defeat" || evtName=="stalemate") {
-                        console.log("got game end event : ",evtName);
+                    
+                    if (evtName=="victory") {
+                        console.log("got ",evtName);
+                        self.setGameStatus("Won by warrior "+data);
+                        running = false;
+                    }
+                    if (evtName=="stalemate") {
+                        console.log("got ",evtName);
+                        self.setGameStatus("Stalemate!");
                         running = false;
                     }
                     
@@ -164,6 +230,8 @@ Dashboard.prototype.viewerStart	= function(){
                 });
             });
             
+            
+            
             self.viewerCall({
     			type	: "gameStart",
     			data	: null
@@ -172,23 +240,40 @@ Dashboard.prototype.viewerStart	= function(){
     			console.log("game started");
     		});
         
-            for (var i=0;i<100000 && running;i++)
-                core.runOnce();
+            var runFew = function() {
+                for (var i=0;i<1000 && running;i++)
+                    core.runOnce();
+                    
+                if (running) setTimeout(runFew,0);
+            }
+        
+            runFew();
+            
           
           
          },10);
          
 		
-	}.bind(this);
+	};
+    
+    
+    var loaded	= function(scriptId, scriptData){
+		scriptsData[scriptId]	= scriptData;
+		if( _.size(scriptsData) == self.scripts.length) {
+			allLoaded()
+		}			
+	}
 	
-}
+	_.each(this.scripts, function(scriptId) {
+		
+		self.editorGetValue(scriptId,function(err,scriptData){
+				loaded(scriptId, scriptData);
+		});		
+		
+	},this);
 
-Dashboard.prototype.viewerOnEnd	= function(eventType, eventData)
-{
-	console.log("viewerOnEnd", eventType, eventData)
-	var winScriptId	= eventData.deathOrder[eventData.deathOrder.length - 1];
-	var str		= "Game won by " + winScriptId + " after "+eventData.turnIdx+"-turns";
-	alert(str)
+    
+	
 }
 
 Dashboard.prototype.viewerListen	= function()
@@ -219,118 +304,4 @@ Dashboard.prototype.viewerListen	= function()
 		//console.dir(event)
 	}.bind(this))
 }
-
-
-//////////////////////////////////////////////////////////////////////////////////
-//		Script List Ui							//
-//////////////////////////////////////////////////////////////////////////////////
-
-Dashboard.prototype.scriptsListUiCtor	= function()
-{
-	jQuery('#ScriptListMenu input[value=insert]').live('click', function(){
-		this.scriptsListUiAppendItem();
-	}.bind(this));
-
-	jQuery('#ScriptList input[type=button][value=edit]').live('click', function(event){
-		var target	= event.currentTarget;
-		var item	= jQuery(target).parent('div.item');
-		var scriptId	= jQuery("input[name=scriptId]", item).val();
-		var scriptUrl	= jQuery("input[name=scriptUrl]", item).val();
-		
-		loadCode(scriptUrl, function(error,scriptData){
-			this.editorSetValue(scriptId, scriptData)
-		}.bind(this), 'html');
-		
-	}.bind(this));
-
-	jQuery('#ScriptList input[type=button][value=remove]').live('click', function(event){
-		var target	= event.currentTarget;
-		var item	= jQuery(target).parent('div.item');
-		if( this.scriptsListUiNbItems() == 1 )	return;
-		item.remove();
-	}.bind(this));
-
-	jQuery('#ScriptList .item input[type=text]').live('change', function(event){
-		console.log("changed", event)
-		this.scriptsListPutLocation();
-	}.bind(this));
-
-
-	// initialisation of the item in ScriptsList	
-	var scripts	= this.scriptsListGetLocation();
-	console.log("scripts", scripts)
-	if( scripts ){
-		this.scriptsListUiClear();
-		Object.keys(scripts).forEach(function(scriptId){
-			var scriptUrl	= scripts[scriptId];
-			this.scriptsListUiAppendItem(scriptId, scriptUrl)
-		}.bind(this))
-	}else{
-		this.scriptsListUiAppendItem();
-	}
-}
-
-Dashboard.prototype.scriptsListUiDtor	= function()
-{
-}
-
-Dashboard.prototype.scriptsListUiNbItems	= function()
-{
-	return jQuery('#ScriptList div.item').length;
-}
-
-Dashboard.prototype.scriptsListUiClear	= function()
-{
-	jQuery('#ScriptList div.item').remove();
-}
-
-Dashboard.prototype.scriptsListUiAppendItem	= function(scriptId, scriptUrl)
-{
-	// TODO to honor scriptId, scriptUrl
-	var element	= jQuery('#ScriptListItemSample div.item').clone();
-	if( scriptId )	jQuery("input[name=scriptId]", element).val(scriptId)
-	if( scriptUrl )	jQuery("input[name=scriptUrl]", element).val(scriptUrl)
-	element.appendTo('#ScriptList');
-}
-
-/**
- * collect the data in the scriptsList
-*/
-Dashboard.prototype.scriptsListCollect	= function()
-{
-	var scripts	= {};
-	jQuery('#ScriptList div.item').each(function(){
-		var scriptId	= jQuery("input[name=scriptId]", this).val();
-		var scriptUrl	= jQuery("input[name=scriptUrl]", this).val();
-		if( scriptId.length === 0 || scriptUrl.length === 0 )	return;
-		scripts[scriptId]	= scriptUrl;
-	});
-	return scripts;
-}
-
-Dashboard.prototype.scriptsListIdConflict	= function()
-{
-	var scripts	= this.scriptsListCollect();
-	var nbUiItems	= jQuery('#ScriptList div.item').length;
-	var conflicting	= Object.keys(scripts).length != nbUiItems;
-	return conflicting;
-}
-
-Dashboard.prototype.scriptsListGetLocation	= function()
-{
-	if( !window.location.hash )	return null;
-	var hash	= window.location.hash.substr(1);
-	var scripts	= JSON.parse(hash);
-	if( Object.keys(scripts).length === 0 )	return null;
-	return scripts;
-}
-
-Dashboard.prototype.scriptsListPutLocation	= function()
-{
-	var scripts	= this.scriptsListCollect();
-	var str		= ''
-	if( Object.keys(scripts).length > 0 )	str	= JSON.stringify(scripts)
-	window.location.hash	= '#'+str;
-}
-
 

@@ -12,8 +12,12 @@
 
   </style>
 </head>
-<body id="log">
+<body>
 
+	<pre id="log">
+		
+	</pre>
+	
 <script type="text/javascript">
 
 
@@ -101,23 +105,53 @@
     };
 
 
-	Viewer.prototype.onCoreExec	= function(data){
+	var fps = 30;
+	var buffer = [];
+	
+	
+	var frame = function() {
+		console.log("frame",buffer.length);
+		if (buffer.length) {
+			
+			var d = document.createElement("span");
+			d.innerHTML = buffer.join("");
+			buffer = [];
+
+			document.getElementById("log").appendChild(d);
+			
+			window.scrollTo(0,1000000000);
+		}
 		
-		var line = pad(data.cycle, 5) +
-                    ' (warrior ' + data.warrior + ':' + pad(data.position, 5) + ')-&gt; '
-                    + data.instructionDump.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-		document.getElementById("log").innerHTML=line+"<br/>"+document.getElementById("log").innerHTML;	
-		return true;
-	}
-
-	Viewer.prototype.onGameStart	= function(){
-		document.getElementById("log").innerHTML="";
-		return true;
+		setTimeout(frame,1000/fps);
 	}
 	
 	
-	var viewer	= new Viewer();
+	
+	Viewer.prototype.receiveEvent = function(evtName,data) {
+		
+		if (evtName=="coreExec") {
+			
+			var line = pad(data.cycle, 5) +
+	                    ' (warrior ' + data.warrior + ':' + pad(data.position, 5) + ')-&gt; '
+	                    + data.instructionDump.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+			buffer.push(line+"<br/>");
+
+			return true;
+			
+		} else if (evtName=="gameStart") {
+			document.getElementById("log").innerHTML="";
+
+			frame();
+
+			return true;
+		}
+		
+	}
+	
+	
+	
+	window.viewer	= new Viewer();
 
 
 </script>

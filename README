@@ -41,3 +41,6 @@ Basically, the parser does this :
  - redcode.preparse(redcode) => javascript
  - eval(javascript) => array of lines like [["MOV",I],["#",0],["$",42]]
  - then the Core/Warrior combo executes them
+
+If you add warriors:
+ - find warriors -name "*.red" > warriors/list.txt

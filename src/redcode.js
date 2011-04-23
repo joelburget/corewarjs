@@ -286,10 +286,18 @@ var parse,preparse;
             instructions[i] = [core[cmd] + (mod===''?0:core[mod]),[core.OP_LOOKUP[op_a], value_a],[core.OP_LOOKUP[op_b], value_b]];
         }
 
+        var start = evmath(startingLine,labels);
+        
+        var cleanSource = "ORG "+start+"\n"+
+            _.map(instructions,function(inst) {
+                return core.dump(inst);
+            }).join("\n");
+
         return {
             "instructions":instructions,
             "lines":lines,
-            "start":evmath(startingLine,labels)
+            "start":start,
+            "cleanSource":cleanSource
         };
     }
 

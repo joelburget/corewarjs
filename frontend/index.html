@@ -1,72 +1,137 @@
 <!DOCTYPE html>
 <html>
-<head></head>
+<head>
+	<title>Javascript Corewar</title>
+	<link href='http://fonts.googleapis.com/css?family=Bangers' rel='stylesheet' type='text/css'>
+	
+	<style type="text/css" media="screen">
+
+		h1 {
+			font-family: 'Bangers', arial, serif;
+			font-size:70px;
+			line-height:80px;
+			margin:0;
+			padding:0;
+			font-weight:normal;
+			text-align:center;
+		}
+		body {
+			font-family: arial, serif;
+		}
+		
+		.scriptUrl {
+			font-family:monospace;
+			background-color:#E0E0E0;
+			padding:2px;
+		}
+		input {
+			margin:7px;
+		}
+		
+		#desc {
+			text-align:center;
+			font-family:monospace;
+		}
+		
+		#botswitcher {
+			border:5px solid #C0C0C0;
+			margin:20px;
+			padding:20px;
+		}		
+		
+		textarea {
+			font-family:monospace;
+			width:390px;
+			height:500px;
+			font-size:15px;
+			background-color:#222;
+			color:#EEE;
+		}
+		
+		#gamestatus {
+			font-weight:bold;
+			color:green;
+		}
+		
+	</style>
+	
+</head>
 <body>
 	
 	<a href="http://github.com/joshfire/corewarjs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://d3nwyuy0nl342s.cloudfront.net/img/71eeaab9d563c2b3c590319b398dd35683265e85/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub"></a>
 	
 	<h1>Javascript Corewar</h1>
-	<style type="text/css" media="screen">
-		#dashboardContainer {
-			/*text-align	: center;*/
-		}
-	</style>
+	<div id="desc">
+		A <a href="http://en.wikipedia.org/wiki/Core_War">Core War</a> parser/runner for browsers or nodejs. <a href="http://github.com/joshfire/corewarjs">README on GitHub</a>. For questions/feedback contact <a href="http://twitter.com/sylvinus">@sylvinus</a>.
+	</div>
+	<br/>
+	
+	
+	
+	<div id="botswitcher" style="display:none">
+		
+		<input type='hidden' id='changebotid' value='' />
+		
+		Load another bot from : 
+		<ul>
+			<li>Any .red file URL : <input id="changeboturl" type="text" value="" size=100> (<a href="http://users.obs.carnegiescience.edu/birk/COREWAR/koenigstuhl.html">lots of them here</a>)
+			<li>A warrior from the library : <select id="changebotlibrary"><option>Loading...</option></select>
+		</ul>
+		<input type="button" class='load' value="load!" />
+	</div>
+	
+	<br/>
+	
 	<div id="dashboardContainer">
 		<!-- editor container -->
-		<style type="text/css" media="screen">
-			#viewerContainer {
-				float		: left;
-				margin-right	: 2em;
-			}
-		</style>
 
-		<!-- viewer container -->
-		<div id="viewerContainer">
-			<div class="menu">
-				<input type="button" value="start"	/>
-				<input type="button" value="stop"	/>
-			</div>
-			<div id="viewer" width="400px" height="400px"></div>
-		</div>
-		<div id="editorContainer">
-			<div class="menu">
-				<span>ScriptId : <span class="value">none</span></span>
-				<input type="button" value="clear"	/>
-			</div>
-			<div id="editor"></div>
-		</div>
-
-		<!-- ScriptList container -->
-		<div id="ScriptListContainer">
-			<div id="ScriptListMenu">
-				<input type="button" value="insert"	>
-			</div>
-			<div id="ScriptList">
-			</div>
-			<div id="ScriptListItemSample" style="display: none;">
-				<div class="item">
-					<input type="text" name="scriptId" 	placeholder="scriptId">
-					<input type="text" name="scriptUrl"	placeholder="scriptUrl" size="50">
-					<input type="button" value="remove"	>
-					<input type="button" value="edit"	>
+		<!-- yeah tables baby -->
+		<table width="100%" id="tableContainer"><tr>
+			<td width="400px">
+				<div class="editorContainer" id="warrior_1">
+					<div class="menu">
+						Warrior 1 : <span class="scriptUrl">warriors/88/simplified/Imp.red</span>
+						<br/><input type="button" class="change" value="change..."	/>
+							<input type="button" class="reload" value="reload"	/>
+					</div>
+					<div class="editor"><textarea></textarea></div>
+					Debug: <input type="button" class="translate" value="reload &amp; translate to js"	/> <input type="button" class="compile" value="reload &amp; compile"	/>
 				</div>
-			</div>
-		</div>
-		<br/><br/>
-		No bot URLs ? try
-		<ul>
-			<li>http://localhost:40008/warriors/88/simplified/Imp.red</li>
-			<li><a href="http://users.obs.carnegiescience.edu/birk/COREWAR/koenigstuhl.html">koenigstuhl list</a></li>
-		</ul>
-		
-		<br/><br/>
-		More info on this projet on our <a href="http://github.com/joshfire/corewarjs">GitHub page</a>
+			</td>
+			
+			<td width="%">
+				
+				<!-- viewer container -->
+				<div id="viewerContainer">
+					<div class="menu">
+						<input type="button" value="start"	/>
+						<input type="button" value="stop"	/>
+						
+						Game status : <span id="gamestatus">Not started yet</span>
+					</div>
+					<div id="viewer"></div>
+				</div>
+			</td>
+			
+			<td width="400px">
+				<div class="editorContainer" id="warrior_2">
+					<div class="menu">
+						Warrior 2 : <span class="scriptUrl">warriors/88/simplified/Dwarf.red</span>
+						<br/><input type="button" class="change" value="change..."	/>
+							<input type="button" class="reload" value="reload"	/>
+					</div>
+					<div class="editor"><textarea></textarea></div>
+					Debug: <input type="button" class="translate" value="reload &amp; translate to js"	/> <input type="button" class="compile" value="reload &amp; compile"	/>
+				</div>
+			</td>
+		</tr></table>
 		
 	</div>	
+	
 
 	<!-- include js -->
 	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js'></script>
-	<script src='jquery.acewidget.js'></script>
+	<!--<script src='jquery.acewidget.js'></script>-->
 	<script src='arena.js'></script>
 	
 	
