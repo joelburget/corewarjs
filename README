@@ -8,7 +8,7 @@ How to test on the server side:
  - node tests/battle.js : run a battle between 2 imps (and soon more!)
 
 How to run the backend/frontend:
- - npm install  expressjs request test
+ - npm install  express request test
  - node backend/app.js => frontend should be up at http://localhost:40008
 
 TODO / How to help:
