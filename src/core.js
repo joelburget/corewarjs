@@ -247,11 +247,11 @@ var Core;
     Core.prototype.instInc = function (position, field, inc) {
       this.core[position][field][VALUE] = modinc(
           this.core[position][field][VALUE], inc, this.coresize);
-      this.instChanged(position)
+      this.instChanged(position,this.curWarrior)
     };
-    Core.prototype.instChanged = function (position) {
+    Core.prototype.instChanged = function (position, warrior) {
       var inst = this.core[position];
-      this.publish('change', {'position': position, 'instruction': inst});
+      this.publish('change', {'position': position, 'instruction': inst, 'warrior':warrior.name});
     };
     Core.prototype.setDefaultCommandModifiers = function (inst) {
       var cmd = inst[CMD];
@@ -332,7 +332,7 @@ var Core;
       if (cmd & (BA|X)) this.core[target][A] = this.core[source][B];
       if (cmd & I) this.core[target][CMD] = this.core[source][CMD];
   
-      this.instChanged(target);
+      this.instChanged(target,warrior);
       warrior.seek(modinc(position, 1, this.coresize));
     };
     Core.prototype.handleADD = function (warrior, process, position, inst, cmd) {
@@ -368,7 +368,7 @@ var Core;
         if (cmd & (BA|X)) this.core[target][A][VALUE] = op(targetA, sourceB);
       }
   
-      this.instChanged(target);
+      this.instChanged(target,warrior);
       warrior.seek(modinc(position, 1, this.coresize));
     };
     Core.prototype.handleJMP = function (warrior, process, position, inst, cmd) {

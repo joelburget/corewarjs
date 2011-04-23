@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Javascript Corewar</title>
+	<title>Online Corewar !</title>
 	<link href='http://fonts.googleapis.com/css?family=Bangers' rel='stylesheet' type='text/css'>
 	
 	<style type="text/css" media="screen">
@@ -53,6 +53,14 @@
 			color:green;
 		}
 		
+		#viewerchooser {
+			float:right;
+			margin-top:5px;
+		}
+		
+		#viewerContainer .menu {
+			line-height:20px;
+		}
 	</style>
 	
 </head>
@@ -60,9 +68,9 @@
 	
 	<a href="http://github.com/joshfire/corewarjs"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://d3nwyuy0nl342s.cloudfront.net/img/71eeaab9d563c2b3c590319b398dd35683265e85/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub"></a>
 	
-	<h1>Javascript Corewar</h1>
+	<h1>Online Corewar !</h1>
 	<div id="desc">
-		A <a href="http://en.wikipedia.org/wiki/Core_War">Core War</a> parser/runner for browsers or nodejs. <a href="http://github.com/joshfire/corewarjs">README on GitHub</a>. For questions/feedback contact <a href="http://twitter.com/sylvinus">@sylvinus</a>.
+		A <a href="http://en.wikipedia.org/wiki/Core_War">Core War</a> parser/runner in pure Javascript. Runs in your browser or nodejs. <a href="http://github.com/joshfire/corewarjs">README on GitHub</a>. For questions/feedback contact <a href="http://twitter.com/sylvinus">@sylvinus</a>.
 	</div>
 	<br/>
 	
@@ -104,10 +112,20 @@
 				<!-- viewer container -->
 				<div id="viewerContainer">
 					<div class="menu">
+						
+						<div id="viewerchooser">Viewer: <select id="viewerselect">
+							<option value="console">console</option>
+							<option value="joel">joel burget's (canvas)</option>
+							<option value="dojo">termie's (raphaeljs)</option>
+							<option value="webgl">jerome_etiennes's (webgl)</option>
+						</select></div>
+						
 						<input type="button" value="start"	/>
 						<input type="button" value="stop"	/>
 						
 						Game status : <span id="gamestatus">Not started yet</span>
+						
+						
 					</div>
 					<div id="viewer"></div>
 				</div>

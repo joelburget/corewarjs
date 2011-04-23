@@ -149,7 +149,7 @@ Dashboard.prototype.viewerReset	= function()
 	jQuery("#viewer").empty().append(
 		jQuery('<iframe>').attr({
 			id	: "viewerIframe",
-			src	: 'viewers/console/index.html',
+			src	: 'viewers/'+jQuery("#viewerselect").val()+'/index.html',
 			width	: jQuery("#viewer").width(),
 			height	: jQuery("#tableContainer").height()
 		})
@@ -161,7 +161,10 @@ Dashboard.prototype.viewerCall	= function(event, callback){
 	
 	//Need to optimize this, we send 160k events in a second
 	
-	var method = destWindow.viewer.receiveEvent(event.type,event.data);
+	if (destWindow.viewer) {
+	    var method = destWindow.viewer.receiveEvent(event.type,event.data);
+	}
+	
 	
 	/*
 	// if a callback is present, install it now
@@ -178,6 +181,8 @@ Dashboard.prototype.viewerCall	= function(event, callback){
 }
 
 Dashboard.prototype.viewerStart	= function(){
+
+    this.viewerReset();
 
     var self = this;
     var scriptsData = {};
