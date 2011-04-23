@@ -83,6 +83,16 @@ var Dashboard = function(){
 	    
 	});
 	
+	//Change viewer
+	
+	jQuery('#viewerselect').change(function() {
+	
+	    self.viewerReset();
+	});
+    
+
+	
+	
 	//Load library
 	jQuery.get('/warriors/list.txt',function(list) {
 	    jQuery('#botswitcher select#changebotlibrary')[0].innerHTML = "<option value=''>Choose...</option>"+_.map(list.split("\n"),function(w) {
@@ -181,8 +191,6 @@ Dashboard.prototype.viewerCall	= function(event, callback){
 }
 
 Dashboard.prototype.viewerStart	= function(){
-
-    this.viewerReset();
 
     var self = this;
     var scriptsData = {};
