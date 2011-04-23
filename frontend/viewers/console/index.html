@@ -77,7 +77,7 @@
 
 	Viewer.prototype.windowMessageSend	= function(event, callback){
 		var destWindow	= window.parent;
-		console.log("viewer.windowMessageSend", event)
+		//console.log("viewer.windowMessageSend", event)
 		// if a callback is present, install it now
 		if( callback ){
 			event.userdata	= event.userdata	|| {}
@@ -110,7 +110,7 @@
 	
 	
 	var frame = function() {
-		console.log("frame",buffer.length);
+		
 		if (buffer.length) {
 			
 			var d = document.createElement("span");

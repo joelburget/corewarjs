@@ -213,7 +213,7 @@ Dashboard.prototype.viewerStart	= function(){
 		    
             var core = new Core();
             core.initialize();
-            console.log(warriors);
+            
             core.loadWarriors(warriors);
             
             var running = true;
@@ -226,12 +226,12 @@ Dashboard.prototype.viewerStart	= function(){
                     
                     
                     if (evtName=="victory") {
-                        console.log("got ",evtName);
+                        //console.log("got ",evtName);
                         self.setGameStatus("Won by warrior "+data);
                         running = false;
                     }
                     if (evtName=="stalemate") {
-                        console.log("got ",evtName);
+                        //console.log("got ",evtName);
                         self.setGameStatus("Stalemate!");
                         running = false;
                     }
@@ -249,8 +249,8 @@ Dashboard.prototype.viewerStart	= function(){
     			type	: "gameStart",
     			data	: null
     		}, function(result){
-    			console.assert(result.status === 'succeed' )
-    			console.log("game started");
+    			//console.assert(result.status === 'succeed' )
+    			//console.log("game started");
     		});
         
             var runFew = function() {
