@@ -238,7 +238,7 @@ var Core;
     };
     Core.prototype.resolvePosition = function (address, current) {
       var relative;
-      console.log(address,current);
+      //console.log(address,current);
       if (address[OP] == IMMEDIATE) {
         relative = 0;
       } else if ((address[OP] & INDIRECT) || (address[OP] & PREDECREMENT) || (address[OP] & POSTINCREMENT)) {
@@ -246,7 +246,6 @@ var Core;
         if (address[OP] & A) {
             relative = address[1]+this.core[current+address[1]][A][VALUE];
         } else {
-            console.log("ind",address[1],this.core[current+address[1]][B][VALUE]);
             relative = address[1]+this.core[current+address[1]][B][VALUE];
         }
         
