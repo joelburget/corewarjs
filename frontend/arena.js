@@ -225,8 +225,8 @@ Dashboard.prototype.viewerStart	= function(){
                 core.subscribe(evtName,function(data) {
                     
                     
-                    if (evtName=="victory") {
-                        //console.log("got ",evtName);
+                    if (evtName=="victory") { // || evtName=="defeat"
+                        //console.log("got ",evtName,data);
                         self.setGameStatus("Won by warrior "+data);
                         running = false;
                     }

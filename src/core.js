@@ -492,11 +492,11 @@ var Core;
       this.end();
 
       if (warrior.processes === 0) {
-        this.defeat();
+        this.defeat(warrior);
       }
 
       if (this.warriors === 1) {
-        this.publish('victory', warrior.name);
+        this.publish('victory', this.curWarrior.name);
       }
   
 
@@ -505,10 +505,8 @@ var Core;
         this.publish('stalemate');
       }
     };
-    Core.prototype.defeat = function () {
-      var warrior = this.curWarrior;
+    Core.prototype.defeat = function (warrior) {
       this.warriors -= 1;
-      this.curWarrior = null;
       if (this.warriors == 0) {
         // If this is the last warrior set nextWarrior to null, too;
         this.nextWarrior = null;
