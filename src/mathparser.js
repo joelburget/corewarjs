@@ -903,7 +903,7 @@ var Parser = (function (scope) {
 			var str = "";
 			for (var i = this.pos; i < this.expression.length; i++) {
 				var c = this.expression.charAt(i);
-				if (c.toUpperCase() === c.toLowerCase()) {
+				if (c.toUpperCase() === c.toLowerCase() && c!="_") {
 					if (i === this.pos || c < '0' || c > '9') {
 						break;
 					}

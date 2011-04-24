@@ -9,7 +9,7 @@ var core = new core.Core();
 
 
 
-loadCode("warriors/88/normal/Fat_Expansion_V.red",function(err,code) {
+loadCode("warriors/88/normal/Evoltmp_88.red",function(err,code) {
     
     
     console.log("\n--------------- SOURCE -------------\n");

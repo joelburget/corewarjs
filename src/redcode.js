@@ -232,6 +232,15 @@ var parse,preparse;
     
         options["CORESIZE"]=options["CORESIZE"] || 8000;
         options["MAXLENGTH"]=options["MAXLENGTH"] || 100;
+        options["MAXPROCESSES"]=options["MAXPROCESSES"] || 8000;
+        options["PSPACESIZE"]=options["PSPACESIZE"] || 500;
+        options["MAXCYCLES"]=options["MAXCYCLES"] || 80000;
+        options["WARRIORS"]=options["WARRIORS"] || 2;
+        options["MINDISTANCE"]=options["MINDISTANCE"] || 100;
+        
+        //the version of pMARS, multiplied by 100 (80 or more)
+        options["MINDISTANCE"]=options["MINDISTANCE"] || 80;
+        
     
         // Prepend constants to the code
         redcode=_.map(options,function(v,k) { return k+" EQU "+v;}).join("\n")+"\n"+redcode;

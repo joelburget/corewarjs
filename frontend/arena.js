@@ -33,21 +33,21 @@ var Dashboard = function(){
 
     	// "precompile..." button
     	jQuery('input.translate',cnt).click(function(){
-    	    self.editorLoad(scriptId,function() {
+    	    //self.editorLoad(scriptId,function() {
         	    self.editorGetValue(scriptId,function(err,code) {
         	        self.editorSetValue(scriptId,preparse(code));
         	    });
-	        });
+	        //});
 	    });
   	
     	// "compile..." button
     	jQuery('input.compile',cnt).click(function(){
-    	    self.editorLoad(scriptId,function() {
+    	    //self.editorLoad(scriptId,function() {
         	    self.editorGetValue(scriptId,function(err,code) {
         	        var parsed = parse(code);
         	        self.editorSetValue(scriptId,parsed.cleanSource);
         	    });
-	        });
+	        //});
 	    });
 	    
     	// "reload" button

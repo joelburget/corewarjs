@@ -39,20 +39,24 @@ fs.readdir("warriors/88/normal/", function (err, files) {
                 var preparsed_normal = redcode.preparse(code_normal);
                 var preparsed_simplified = redcode.preparse(code_simplified);
 
-                console.warn(preparsed_normal);
-                console.warn(preparsed_simplified);
+                //console.warn(preparsed_normal);
+                //console.warn(preparsed_simplified);
 
 
                 var parsed_normal = redcode.parse(code_normal);
                 var parsed_simplified = redcode.parse(code_simplified);
 
-                console.warn(parsed_normal);
-                console.warn(parsed_simplified);
+                //console.warn(parsed_normal);
+                //console.warn(parsed_simplified);
             
                 if (_.isEqual(parsed_normal.parsed,parsed_simplified.parsed)) {
                 
                     console.log("ok");
                 } else {
+                    
+                        console.warn(preparsed_normal);
+//                        console.warn(preparsed_simplified);
+
                     console.log("nok",parsed_normal,pased_simplified);
                 }
             

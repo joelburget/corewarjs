@@ -238,13 +238,15 @@ var Core;
     };
     Core.prototype.resolvePosition = function (address, current) {
       var relative;
+      console.log(address,current);
       if (address[OP] == IMMEDIATE) {
         relative = 0;
-      } else if (address[OP] & INDIRECT) {
+      } else if ((address[OP] & INDIRECT) || (address[OP] & PREDECREMENT) || (address[OP] & POSTINCREMENT)) {
           
         if (address[OP] & A) {
             relative = address[1]+this.core[current+address[1]][A][VALUE];
         } else {
+            console.log("ind",address[1],this.core[current+address[1]][B][VALUE]);
             relative = address[1]+this.core[current+address[1]][B][VALUE];
         }
         
@@ -284,19 +286,23 @@ var Core;
     };
     Core.prototype.handlePredecrement = function (inst, position) {
       var decrPos;
-      if (inst[A] & PREDECREMENT) {
-        decrPos = this.resolvePosition(inst[A], position);
-        if (inst[A] & A) {
+      
+      if (inst[A][OP] & PREDECREMENT) {
+        decrPos = inst[A][VALUE]+position //decrPos = this.resolvePosition(inst[A], position);
+        if (inst[A][OP] & A) {
           this.instInc(decrPos, A, -1);
-        } else if (inst[A] & B) {
+        } else if (inst[A][OP] & B) {
           this.instInc(decrPos, B, -1);
         }
       }
-      if (inst[B] & PREDECREMENT) {
-        decrPos = this.resolvePosition(inst[B], position);
-        if (inst[B] & A) {
+      
+      if (inst[B][OP] & PREDECREMENT) {
+          
+        decrPos = inst[B][VALUE]+position; //this.resolvePosition(inst[B], position);
+
+        if (inst[B][OP] & A) {
           this.instInc(decrPos, A, -1);
-        } else if (inst[B] & B) {
+        } else if (inst[B][OP] & B) {
           this.instInc(decrPos, B, -1);
         }
       }
@@ -304,7 +310,7 @@ var Core;
     Core.prototype.handlePostincrement = function (inst, position) {
       var incPos;
       if (inst[A][OP] & POSTINCREMENT) {
-        incPos = this.resolvePosition(inst[A], position);
+        incPos = inst[A][VALUE] + position; //this.resolvePosition(inst[A], position);
         if (inst[A][OP] & A) {
           this.instInc(incPos, A, 1);
         } else if (inst[A][OP] & B) {
@@ -312,7 +318,7 @@ var Core;
         }
       }
       if (inst[B][OP] & POSTINCREMENT) {
-        incPos = this.resolvePosition(inst[B], position);
+        incPos = inst[B][VALUE] + position; //incPos = this.resolvePosition(inst[B], position);
         if (inst[B][OP] & A) {
           this.instInc(incPos, A, 1);
         } else if (inst[B][OP] & B) {
