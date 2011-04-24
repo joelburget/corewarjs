@@ -44,10 +44,10 @@
 	window.viewer = {
 		receiveEvent:function(evtName,data) {
 	
-			//if (evtName=="coreChange") {
-	
-			if (evtName=="coreExec") {
+			if (evtName=="coreExec" || evtName=="coreChange") {
 		
+				//console.log(evtName,data.position,data.instructionDump);
+				
 				buffer.push(data);
 
 				return true;

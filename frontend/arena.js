@@ -254,8 +254,9 @@ Dashboard.prototype.viewerStart	= function(){
     		});
         
             var runFew = function() {
-                for (var i=0;i<1000 && running;i++)
+                for (var i=0;i<1000 && running;i++) {
                     core.runOnce();
+                }
                     
                 if (running) setTimeout(runFew,0);
             }

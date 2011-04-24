@@ -103,13 +103,13 @@ var dump = function (inst) {
   if (!mod) out.push('_');
 
   for (var e in OP_LOOKUP) {
-    if (inst[A][OP] & OP_LOOKUP[e]) {
+    if (inst[A][OP] == OP_LOOKUP[e]) {
       out.push(e);
       out.push(inst[A][VALUE]);
     }
   }
   for (var f in OP_LOOKUP) {
-    if (inst[B][OP] & OP_LOOKUP[f]) {
+    if (inst[B][OP] == OP_LOOKUP[f]) {
       out.push(f);
       out.push(inst[B][VALUE]);
     }
@@ -237,8 +237,17 @@ var Core;
       this.nextWarrior = this.curWarrior.next;
     };
     Core.prototype.resolvePosition = function (address, current) {
+      var relative;
       if (address[OP] == IMMEDIATE) {
         relative = 0;
+      } else if (address[OP] & INDIRECT) {
+          
+        if (address[OP] & A) {
+            relative = address[1]+this.core[current+address[1]][A][VALUE];
+        } else {
+            relative = address[1]+this.core[current+address[1]][B][VALUE];
+        }
+        
       } else {
         relative = address[1];
       }
@@ -251,7 +260,7 @@ var Core;
     };
     Core.prototype.instChanged = function (position, warrior) {
       var inst = this.core[position];
-      this.publish('change', {'position': position, 'instruction': inst, 'warrior':warrior.name});
+      this.publish('change', {'position': position, 'instruction': inst, 'warrior':warrior.name,'instructionDump': dump(inst)});
     };
     Core.prototype.setDefaultCommandModifiers = function (inst) {
       var cmd = inst[CMD];
@@ -446,8 +455,9 @@ var Core;
       if (DEBUG) {
         console.log(pad(this.cycle, 5) +
                     ' (' + warrior.name + ':' + pad(position, 5) + ')-> '
-                    + dump(inst)); 
+                    + dump(inst),inst); 
       }
+
       this.publish('exec', {'cycle':this.cycle,'warrior':warrior.name,'position': position, 'instruction': inst,'instructionDump': dump(inst)});
 
       this.handlePredecrement(inst, position);
