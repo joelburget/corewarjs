@@ -244,9 +244,9 @@ var Core;
       } else if ((address[OP] & INDIRECT) || (address[OP] & PREDECREMENT) || (address[OP] & POSTINCREMENT)) {
           
         if (address[OP] & A) {
-            relative = address[1]+this.core[current+address[1]][A][VALUE];
+            relative = address[1]+this.core[modinc(current,address[1], this.coresize)][A][VALUE];
         } else {
-            relative = address[1]+this.core[current+address[1]][B][VALUE];
+            relative = address[1]+this.core[modinc(current,address[1], this.coresize)][B][VALUE];
         }
         
       } else {
@@ -287,7 +287,7 @@ var Core;
       var decrPos;
       
       if (inst[A][OP] & PREDECREMENT) {
-        decrPos = inst[A][VALUE]+position //decrPos = this.resolvePosition(inst[A], position);
+        decrPos = modinc(position, inst[A][VALUE], this.coresize); //decrPos = this.resolvePosition(inst[A], position);
         if (inst[A][OP] & A) {
           this.instInc(decrPos, A, -1);
         } else if (inst[A][OP] & B) {
@@ -297,7 +297,7 @@ var Core;
       
       if (inst[B][OP] & PREDECREMENT) {
           
-        decrPos = inst[B][VALUE]+position; //this.resolvePosition(inst[B], position);
+        decrPos = modinc(position, inst[B][VALUE], this.coresize); //this.resolvePosition(inst[B], position);
 
         if (inst[B][OP] & A) {
           this.instInc(decrPos, A, -1);
@@ -309,7 +309,7 @@ var Core;
     Core.prototype.handlePostincrement = function (inst, position) {
       var incPos;
       if (inst[A][OP] & POSTINCREMENT) {
-        incPos = inst[A][VALUE] + position; //this.resolvePosition(inst[A], position);
+        incPos = modinc(position, inst[A][VALUE], this.coresize);//this.resolvePosition(inst[A], position);
         if (inst[A][OP] & A) {
           this.instInc(incPos, A, 1);
         } else if (inst[A][OP] & B) {
@@ -317,7 +317,7 @@ var Core;
         }
       }
       if (inst[B][OP] & POSTINCREMENT) {
-        incPos = inst[B][VALUE] + position; //incPos = this.resolvePosition(inst[B], position);
+        incPos = modinc(position, inst[B][VALUE], this.coresize); //incPos = this.resolvePosition(inst[B], position);
         if (inst[B][OP] & A) {
           this.instInc(incPos, A, 1);
         } else if (inst[B][OP] & B) {
