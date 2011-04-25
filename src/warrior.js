@@ -23,11 +23,8 @@ var Warrior;
     Warrior = function (name, offset, instructions) {
 
       this.name = name;
-      this.processes = 0;
-
-      this.curProcess = null;
-      this.nextProcess = null;
-
+      this.reset();
+      
       this.offset = offset || 0;
       if (instructions && typeof(instructions) === 'string') {
         this.code = instructions;
@@ -37,67 +34,89 @@ var Warrior;
       }
       this.instructions = instructions || [];
   
-      // Links for warrior list
-      this.next = null;
-      this.prev = null;
+      
     };
 
     MicroEvent.mixin(Warrior);
+
+
+    Warrior.prototype.reset = function () {
+        
+        this.processes = [];
+        this.curProcess = null;
+        
+        // Links for warrior list
+        this.next = null;
+        this.prev = null;
+    };
 
     /**
      * Return the process that should execute now
      */
     Warrior.prototype.start = function () {
-      return this.curProcess;
+      return this.processes[this.curProcess];
     };
     Warrior.prototype.end = function () {
-      if (!this.nextProcess) {
+        
+      if (this.processes.length==0) {
         return;
+      } else if (this.processes.length>1) {
+          this.curProcess = (this.curProcess+1)%this.processes.length;
       }
-      this.curProcess = this.nextProcess;
-      this.nextProcess = this.curProcess.next;
+      
     };
     Warrior.prototype.kill = function () {
-      var process = this.curProcess;
-      this.curProcess = null;
-      this.processes -= 1;
-      if (this.processes == 0) {
-        // If this is the last process set nextProcess to null, too;
-        this.nextProcess = null;
-      } else if (this.processes == 1) {
-        // If we only have one process make sure it points to itself
-        this.nextProcess.prev = this.nextProcess;
-        this.nextProcess.next = this.nextProcess;
+      
+      var process = this.processes[this.curProcess];
+      this.processes = this.processes.slice(0,this.curProcess).concat(this.processes.slice(this.curProcess+1));
+      
+      
+      //reindex
+      if (this.processes.length>1) {
+          this.curProcess-=1;
       } else {
-        // Otherwise just switch the pointers
-        process.prev.next = this.nextProcess;
-        this.nextProcess.prev = process.prev;
+          this.curProcess = 0;
       }
+            
+      
+      //console.log("killed",this.processes.concat(),this.curProcess);
+      
       this.publish('kill', process);
     };
     Warrior.prototype.split = function (newPosition) {
-      this.processes += 1;
-      var newProcess = {position: newPosition};
-      newProcess.prev = this.curProcess;
-      newProcess.next = this.curProcess.next;
-      this.curProcess.next = newProcess;
-      this.nextProcess = newProcess;
-      this.publish('split', {process: this.curProcess, newProcess: newProcess});
+/*        if (newPosition>8000) {
+              throw "splitting too far!";
+          }
+*/
+      //insert the new process
+      this.processes = this.processes.slice(0,this.curProcess+1).concat([newPosition],this.processes.slice(this.curProcess+1));
+      
+      this.publish('split', {process: this.processes[this.curProcess], newProcess:newPosition});
+      
+      //make sure we don't skip to the next process right away at the next iteration
+      this.curProcess += 1;
+      //console.log("splat",this.curProcess);
+      
     };
     Warrior.prototype.spawn = function (position) {
-      if (this.processes > 0) {
+      if (this.processes.length > 0) {
         throw "Attempting to spawn a new process when a process is already running";
       }
-      this.processes = 1;
-      this.curProcess = {position: position};
-      this.curProcess.next = this.curProcess;
-      this.curProcess.prev = this.curProcess;
-      this.nextProcess = this.curProcess;
-      this.publish('spawn', this.curProcess);
+/*      if (position>8000) {
+          throw "spawning too far!";
+      }
+*/
+      this.processes = [position];
+      this.curProcess = 0;
+      this.publish('spawn', this.processes[this.curProcess]);
     }
     Warrior.prototype.seek = function (position) {
-      this.curProcess.position = position;
-      this.publish('seek', this.curProcess);
+/*        if (position>8000) {
+            throw "seeking too far!";
+        }
+*/
+      this.processes[this.curProcess] = position;
+      this.publish('seek', position);
     };
 
 

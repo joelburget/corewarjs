@@ -193,6 +193,7 @@ var Core;
       for (var i = 0; i < this.coresize; i++) {
         this.core[i] = [DAT, [IMMEDIATE, 0], [IMMEDIATE, 0]];
       }
+      this.finished=false;
     };
     Core.prototype.loadWarriors = function (warriors) {
       // optimistically pick spots and check that they are each length + mindistance
@@ -229,7 +230,7 @@ var Core;
           this.core[(loadPoint + parseInt(j)) % this.coresize] = instructions[j];
         }
 
-        warrior.spawn(loadPoint + warrior.offset);
+        warrior.spawn((loadPoint + warrior.offset) % this.coresize);
       }
       lastWarrior.next = firstWarrior;
       firstWarrior.prev = lastWarrior;
@@ -325,17 +326,17 @@ var Core;
         }
       }
     };
-    Core.prototype.handleDAT = function (warrior, process, position, inst, cmd) {
-      warrior.kill(process);
+    Core.prototype.handleDAT = function (warrior, position, inst, cmd) {
+      warrior.kill();
     };
-    Core.prototype.handleSPL = function (warrior, process, position, inst, cmd) {
+    Core.prototype.handleSPL = function (warrior, position, inst, cmd) {
       var splitToPosition = this.resolvePosition(inst[A], position);
       var thisNewPosition = modinc(position, 1, this.coresize);
 
       warrior.seek(thisNewPosition);
       warrior.split(splitToPosition);
     };
-    Core.prototype.handleMOV = function (warrior, process, position, inst, cmd) {
+    Core.prototype.handleMOV = function (warrior, position, inst, cmd) {
       var source = this.resolvePosition(inst[A], position);
       var target = this.resolvePosition(inst[B], position);
       //console.log('MOV source ' + source + ', target: ' + target);
@@ -349,7 +350,7 @@ var Core;
       this.instChanged(target,warrior);
       warrior.seek(modinc(position, 1, this.coresize));
     };
-    Core.prototype.handleADD = function (warrior, process, position, inst, cmd) {
+    Core.prototype.handleADD = function (warrior, position, inst, cmd) {
       var source = this.resolvePosition(inst[A], position);
       var target = this.resolvePosition(inst[B], position);
       var m = (cmd & SUB) ? -1 : 1;
@@ -370,26 +371,26 @@ var Core;
         // divide by zero
         warrior.kill();
       } else {
-        if (cmd & (A|F|I)) this.core[target][A][VALUE] = op(targetA, sourceA); 
-        if (cmd & (AB|X)) this.core[target][B][VALUE] = op(targetB, sourceA); 
+        if (cmd & (A|F|I)) this.core[target][A][VALUE] = modinc(op(targetA, sourceA),0,this.coresize); 
+        if (cmd & (AB|X)) this.core[target][B][VALUE] = modinc(op(targetB, sourceA),0,this.coresize); 
       }
 
       if (cmd & (DIV|MOD) && cmd & (B|F|I|BA|X) && sourceB === 0) {
         // divide by zero
         warrior.kill();
       } else {
-        if (cmd & (B|F|I)) this.core[target][B][VALUE] = op(targetB, sourceB);
-        if (cmd & (BA|X)) this.core[target][A][VALUE] = op(targetA, sourceB);
+        if (cmd & (B|F|I)) this.core[target][B][VALUE] = modinc(op(targetB, sourceB),0,this.coresize);
+        if (cmd & (BA|X)) this.core[target][A][VALUE] = modinc(op(targetA, sourceB),0,this.coresize);
       }
   
       this.instChanged(target,warrior);
       warrior.seek(modinc(position, 1, this.coresize));
     };
-    Core.prototype.handleJMP = function (warrior, process, position, inst, cmd) {
+    Core.prototype.handleJMP = function (warrior, position, inst, cmd) {
       var newPosition = this.resolvePosition(inst[A], position);
       warrior.seek(newPosition);
     };
-    Core.prototype.handleJMZ = function (warrior, process, position, inst, cmd) {
+    Core.prototype.handleJMZ = function (warrior, position, inst, cmd) {
       var source = this.resolvePosition(inst[A], position);
       var target = this.resolvePosition(inst[B], position);
   
@@ -434,8 +435,8 @@ var Core;
         warrior.seek(modinc(position, 1, this.coresize));
       }
     };
-    Core.prototype.handleNOP = function (warrior, process, position, inst, cmd) {
-      process.position = modinc(position, 1, this.coresize);
+    Core.prototype.handleNOP = function (warrior, position, inst, cmd) {
+      warrior.seek(modinc(position, 1, this.coresize));
     };
     Core.prototype.start = function () {
       return this.curWarrior;
@@ -444,17 +445,37 @@ var Core;
       this.curWarrior = this.nextWarrior;
       this.nextWarrior = this.curWarrior.next;
     };
+    Core.prototype.run = function (DEBUG) {
+        while (!this.finished) {
+            this.runOnce(DEBUG);
+        }
+    }
+    
     Core.prototype.runOnce = function (DEBUG) {
-      if (this.warriors === 0) {
+      if (this.warriors === 0 || this.finished) {
         // nothing to do
         return;
       }
 
       var warrior = this.start();
-      var process = warrior.start();
-      var position = process.position;
+      var position = warrior.start();
+      
+      if (typeof position=="undefined") {
+          //console.log("got no position",warrior);
+          this.publish('stalemate');
+          return;
+      }
+      
       var inst = this.core[position];
-      inst = this.setDefaultCommandModifiers(inst);
+      
+      if (typeof inst=="undefined") {
+            //console.log("got invalid position",inst,warrior,position);
+            this.publish('stalemate');
+            return;
+      }
+      
+      
+      inst = this.setDefaultCommandModifiers(inst,position);
       var cmd = inst[CMD];
   
       if (DEBUG) {
@@ -469,23 +490,23 @@ var Core;
   
       // Handle commands
       if (cmd & DAT) {
-        this.handleDAT(warrior, process, position, inst, cmd);
+        this.handleDAT(warrior, position, inst, cmd);
       } else if (cmd & SPL) {
-        if (warrior.processes == this.maxprocesses) {
-          this.handleNOP(warrior, process, position, inst, cmd);
+        if (warrior.processes.length == this.maxprocesses) {
+          this.handleNOP(warrior, position, inst, cmd);
         } else {
-          this.handleSPL(warrior, process, position, inst, cmd);
+          this.handleSPL(warrior, position, inst, cmd);
         }
       } else if (cmd & MOV) {
-        this.handleMOV(warrior, process, position, inst, cmd);
+        this.handleMOV(warrior, position, inst, cmd);
       } else if (cmd & (ADD|SUB|MUL|DIV|MOD)) {
-        this.handleADD(warrior, process, position, inst, cmd);
+        this.handleADD(warrior, position, inst, cmd);
       } else if (cmd & JMP) {
-        this.handleJMP(warrior, process, position, inst, cmd);
+        this.handleJMP(warrior, position, inst, cmd);
       } else if (cmd & (JMZ|JMN|DJN|SEQ|SNE|CMP|SLT)) {
-        this.handleJMZ(warrior, process, position, inst, cmd);
+        this.handleJMZ(warrior, position, inst, cmd);
       } else if (cmd & NOP) {
-        this.handleNOP(warrior, process, position, inst, cmd);
+        this.handleNOP(warrior, position, inst, cmd);
       }
 
       this.handlePostincrement(inst, position);
@@ -496,11 +517,14 @@ var Core;
       // So has the warrior;
       this.end();
 
-      if (warrior.processes === 0) {
+      if (warrior.processes.length === 0) {
+        //  console.log("defeat",warrior);
         this.defeat(warrior);
+        this.finished=true;
       }
 
       if (this.warriors === 1) {
+          this.finished=true;
         this.publish('victory', this.curWarrior.name);
       }
   
@@ -508,6 +532,7 @@ var Core;
       this.cycle += 1;
       if (this.cycle >= this.maxcycles) {
         this.publish('stalemate');
+        this.finished=true;
       }
     };
     Core.prototype.defeat = function (warrior) {
