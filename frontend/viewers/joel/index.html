@@ -16,18 +16,54 @@
       -moz-border-radius: 3px;
     }
 
-    #screen {
-      display: block;
+    #wrapper {
       margin-top: 50px;
+      display: block;
       margin-left: auto;
       margin-right: auto;
+      overflow: auto;
+      width: 420px;
+    }
+
+    #left-marker {
+      background-color: rgb(116,149,214);
+      min-height: 320px;
+      width: 10px;
+      float: left;
+      -webkit-border-top-left-radius: 3px;
+      -moz-border-radius-topleft: 3px;
+      border-top-left-radius: 3px;
+      -webkit-border-bottom-left-radius: 3px;
+      -moz-border-radius-bottomleft: 3px;
+      border-bottom-left-radius: 3px;
+    }
+
+    #screen {
+      float: left;
+    }
+
+    #right-marker {
+      background-color: rgb(177,214,49);
+      min-height: 320px;
+      width: 10px;
+      float: left;
+      -webkit-border-bottom-right-radius: 3px;
+      -moz-border-radius-bottomright: 3px;
+      border-bottom-right-radius: 3px;
+      -webkit-border-top-right-radius: 3px;
+      -moz-border-radius-topright: 3px;
+      border-top-right-radius: 3px;
     }
   </style>
 </head>
 <body>
-  <canvas id="screen" class="decorate" width="400" height="320">
-    Your browser doesn't seem to support canvas...
-  </canvas>
+  <div id="wrapper" class="decorate">
+    <div id="left-marker"></div>
+    <canvas id="screen" width="400" height="320">
+      Your browser doesn't seem to support canvas...
+    </canvas>
+    <div id="right-marker"></div>
+  </div>
 <script type="text/javascript">
 
 
